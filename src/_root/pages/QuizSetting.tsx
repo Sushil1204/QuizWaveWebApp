@@ -35,16 +35,29 @@ const QuizSetting = () => {
         {/* Play Button */}
         <div className="w-full flex flex-col items-center space-y-8">
           {/* Timer Input using Simple Dropdown */}
-          <div className="w-64 md:w-80">
-            <label className="block mb-2 text-white text-sm md:text-lg font-medium">
-              Set Timer for the Quiz
-            </label>
-            <select className="w-full p-3 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="15">15 minutes</option>
-              <option value="20">20 minutes</option>
-            </select>
+          <div className="flex gap-4">
+            <div className="w-64 md:w-80">
+              <label className="block mb-2 text-white text-sm md:text-lg font-medium">
+                Set Timer for the Quiz
+              </label>
+              <select className="w-full p-3 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="20">20 minutes</option>
+              </select>
+            </div>
+            <div className="w-64 md:w-80">
+              <label className="block mb-2 text-white text-sm md:text-lg font-medium">
+                Set Number of Players
+              </label>
+              <select className="w-full p-3 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                <option value="2">2 Players</option>
+                <option value="3">3 Players</option>
+                <option value="4">4 Players</option>
+                <option value="5">5 Players</option>
+              </select>
+            </div>
           </div>
           <div className="w-64 md:w-96 h-20 bg-white flex items-center justify-center rounded-lg border-2 border-gray-800 shadow-[10px_10px_20px_rgba(0,0,0,2)] cursor-pointer transition hover:shadow-xl hover:scale-105">
             <p className="text-lg font-medium">Click to play</p>
