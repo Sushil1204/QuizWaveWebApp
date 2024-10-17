@@ -4,6 +4,7 @@ import Login from "./_auth/forms/login";
 import Registration from "./_auth/forms/registration";
 import RootLayout from "./_root/rootLayout";
 import Home from "./_root/pages/Home";
+import QuizSetting from "./_root/pages/QuizSetting";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
 
         <Route element={<RootLayout />}>
           <Route index element={<Home />} />
+          <Route path="/quiz-setup/:title" element={<QuizSetting />} />
         </Route>
       </Routes>
     </main>

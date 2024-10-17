@@ -1,4 +1,5 @@
 import { useInView } from "react-intersection-observer";
+import { useNavigate } from "react-router-dom";
 
 type ICategory = {
   title: string;
@@ -16,6 +17,8 @@ const LazyImageCard = ({ category }: { category: ICategory }) => {
     threshold: 0.1, // Image loads when 10% of it is in view
   });
 
+  const navigate = useNavigate();
+
   return (
     <div
       ref={ref}
@@ -25,6 +28,7 @@ const LazyImageCard = ({ category }: { category: ICategory }) => {
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
+      onClick={() => navigate(`/quiz-setup/${category?.title}`)}
     >
       {/* Add a semi-transparent overlay for better text readability */}
       <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg"></div>
