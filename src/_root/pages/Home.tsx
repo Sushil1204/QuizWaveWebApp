@@ -1,28 +1,14 @@
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { CardContent, CardTitle } from "@/components/ui/card";
+import { ICategory, IUser } from "@/constants/interfaces";
 import { useGetAllCategories } from "@/lib/react-query/queriesAndMutation";
-import { Search } from "lucide-react";
 import { lazy, Suspense } from "react";
 
 const LazyImageCard = lazy(() => import("@/components/shared/lazyImageCard"));
-type ICategory = {
-  title: string;
-  imageUrl: string;
-  $id: string;
-  $createdAt: string;
-  $updatedAt: string;
-  $permissions: any[];
-  $databaseId: string;
-  $collectionId: string;
-};
+
 const Home = () => {
   const { data: categories, isPending } = useGetAllCategories();
+  const userData: IUser = JSON.parse(localStorage.getItem("userInfo") || "");
+
   const mappedCategories = categories?.map((category) => ({
     title: category.title, // Adjust this to match actual structure
     imageUrl: category.imageUrl, // Adjust as needed
@@ -38,7 +24,7 @@ const Home = () => {
       <div className="w-full px-5 py-3 md:py-5 sm:px-10 flex flex-col items-center bg-gradient-to-r from-[#6a82fb] to-[#fc5c7d] border-none">
         <CardContent className="space-y-6 mt-4 text-center animate-fadeIn">
           <CardTitle className="px-6 py-0 text-xl sm:text-2xl md:text-4xl font-extrabold tracking-wide text-white">
-            Welcome Sushil, to QuizWave! 🎉
+            {userData?.name} Welcome, to QuizWave! 🎉
             <span className="hidden md:block mt-3   md:text-base text-gray-200">
               Ready to challenge your brain? Dive into thrilling trivia
               categories and test your knowledge. Let the fun begin!

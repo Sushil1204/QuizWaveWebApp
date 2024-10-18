@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -14,31 +13,40 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Phone } from "lucide-react";
-import { useState } from "react"; // Import useState
+import { useEffect, useState } from "react";
 import {
   InputOTP,
   InputOTPGroup,
-  InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import loader from "@/assets/loader.gif";
 import Loader from "@/components/shared/loader";
+import {
+  useLoginUser,
+  useRegisterUser,
+  useUpdateName,
+} from "@/lib/react-query/queriesAndMutation";
+import { generateUsername } from "@/lib/generateUserName";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
+// Zod validation schema for the form
 const formSchema = z.object({
   phone: z
     .string()
     .regex(/^[0-9]*$/, "Invalid phone number")
     .min(10, "Phone number must be 10 digits.")
     .max(10, "Phone number must be 10 digits."),
-  otp: z.string().max(6, "OTP must be 6 digits.").optional(),
+  otp: z.string().length(6, "OTP must be 6 digits.").optional(),
 });
 
 const Login = () => {
-  const [otpSent, setOtpSent] = useState(false); // Track OTP status
-  const isLoading = true;
-  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [otpSent, setOtpSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Define your form.
+  // Initialize form using react-hook-form and Zod
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,44 +55,73 @@ const Login = () => {
     },
   });
 
-  // Simulate sending OTP
-  const sendOtp = async (phone: string) => {
-    try {
-      setIsSubmitting(true);
-      console.log(`Sending OTP to phone: ${phone}`);
-      // Simulate successful OTP sending
-      setOtpSent(true);
-    } catch (error) {
-      form.setError("phone", {
-        message: "Failed to send OTP. Please try again.",
-      });
-    }
-  };
+  // Register user hook
+  const {
+    data: registrationData,
+    mutateAsync: registerMutation,
+    isError: registrationError,
+  } = useRegisterUser();
 
-  // Simulate OTP verification and login
-  const verifyOtp = async (values: z.infer<typeof formSchema>) => {
+  // Login user hook
+  const {
+    mutateAsync: loginMutation,
+    isSuccess: loginSuccess,
+    isError: loginError,
+  } = useLoginUser();
+
+  // Update name hook
+  const {
+    data: userInfo,
+    mutateAsync: updateNameMutation,
+    isSuccess: updateNameSuccessful,
+    isError: updateNameError,
+  } = useUpdateName();
+
+  // Handle form submission logic
+  const handleLogin = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
     try {
-      setIsSubmitting(true);
-      console.log("Verifying OTP:", values.otp);
-      // Simulate successful verification
-      console.log("Logged in successfully");
+      if (!otpSent) {
+        // Send OTP step
+        await registerMutation(values.phone);
+        setOtpSent(true);
+        toast({
+          title: "OTP Sent",
+          description:
+            "A One-Time Password (OTP) has been successfully sent to your mobile number. Please enter it to proceed.",
+        });
+      } else {
+        // After OTP is sent, log the user in
+        const userID = registrationData?.userId;
+        await loginMutation({ userID, OTP: values?.otp });
+
+        // If login succeeds, update the username
+        if (loginSuccess) {
+          toast({
+            title: "OTP Verified",
+            description:
+              "Your OTP has been successfully verified. Welcome aboard!",
+          });
+          const username = generateUsername();
+          await updateNameMutation(username);
+        }
+      }
     } catch (error) {
-      form.setError("otp", {
-        message: "Invalid OTP. Please try again.",
-      });
+      setErrorMessage("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle form submission
-  const handleLogin = (values: z.infer<typeof formSchema>) => {
-    if (!otpSent) {
-      sendOtp(values.phone); // Send OTP if not sent yet
-    } else {
-      verifyOtp(values); // Verify OTP if already sent
+  // Handle navigation after success
+  useEffect(() => {
+    if (loginSuccess || updateNameSuccessful) {
+      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+      navigate("/");
     }
-  };
+  }, [loginSuccess, updateNameSuccessful, userInfo, navigate]);
 
   return (
     <Card className="w-full md:w-2/3 mx-auto p-6 bg-[#e5e5e5] border-2 border-gray-800 md:shadow-[10px_10px_20px_rgba(0,0,0,2)]">
@@ -113,8 +150,8 @@ const Login = () => {
                       <Input
                         placeholder="Enter phone number"
                         className="pl-10"
-                        // disabled={otpSent} // Disable input if OTP is sent
-                        {...field} // Spread field props correctly
+                        disabled={otpSent || isSubmitting}
+                        {...field}
                       />
                     </div>
                   </FormControl>
@@ -134,12 +171,9 @@ const Login = () => {
                     <FormControl>
                       <InputOTP maxLength={6} {...field}>
                         <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
+                          {[...Array(6)].map((_, index) => (
+                            <InputOTPSlot index={index} key={index} />
+                          ))}
                         </InputOTPGroup>
                       </InputOTP>
                     </FormControl>
@@ -149,8 +183,26 @@ const Login = () => {
               />
             )}
 
+            {/* Error Message */}
+            {errorMessage && (
+              <p
+                className="text-red-600 text-sm"
+                role="alert"
+                aria-live="assertive"
+              >
+                {errorMessage}
+              </p>
+            )}
+
+            {/* Loader */}
+            {isSubmitting && <Loader />}
+
             {/* Submit Button */}
-            <Button className="w-full flex items-center gap-4 " type="submit">
+            <Button
+              className="w-full flex items-center gap-4"
+              type="submit"
+              disabled={isSubmitting}
+            >
               <LogIn className="mr-2 h-5 w-5" />
               {otpSent ? "Continue" : "Send OTP"}
             </Button>

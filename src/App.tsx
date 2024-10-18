@@ -1,10 +1,10 @@
 import { Route, Routes } from "react-router-dom";
 import AuthLayout from "./_auth/authLayout";
 import Login from "./_auth/forms/login";
-import Registration from "./_auth/forms/registration";
 import RootLayout from "./_root/rootLayout";
 import Home from "./_root/pages/Home";
 import QuizSetting from "./_root/pages/QuizSetting";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   return (
@@ -12,7 +12,6 @@ function App() {
       <Routes>
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Registration />} />
         </Route>
 
         <Route element={<RootLayout />}>
@@ -20,6 +19,7 @@ function App() {
           <Route path="/quiz-setup/:title" element={<QuizSetting />} />
         </Route>
       </Routes>
+      <Toaster />
     </main>
   );
 }
