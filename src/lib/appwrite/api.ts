@@ -39,3 +39,17 @@ export const loginUser = async ({ userID, OTP }: ILoginCred) => {
     return session;
   } catch (error) {}
 };
+
+export const logoutUser = async () => {
+  try {
+    const result = await account.deleteSession("current");
+    return result;
+  } catch (error) {}
+};
+
+export const getUser = async () => {
+  try {
+    const result = await account.get();
+    return result;
+  } catch (error) {}
+};

@@ -13,40 +13,37 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Phone } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"; // Import useState
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import Loader from "@/components/shared/loader";
 import {
+  useGetUser,
   useLoginUser,
   useRegisterUser,
   useUpdateName,
 } from "@/lib/react-query/queriesAndMutation";
-import { generateUsername } from "@/lib/generateUserName";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-// Zod validation schema for the form
+import { useNavigate } from "react-router-dom";
+import { generateUsername } from "@/lib/generateUserName";
 const formSchema = z.object({
   phone: z
     .string()
     .regex(/^[0-9]*$/, "Invalid phone number")
     .min(10, "Phone number must be 10 digits.")
     .max(10, "Phone number must be 10 digits."),
-  otp: z.string().length(6, "OTP must be 6 digits.").optional(),
+  otp: z.string().max(6, "OTP must be 6 digits.").optional(),
 });
-
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [otpSent, setOtpSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(false); // Track OTP status
+  const isLoading = true;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Initialize form using react-hook-form and Zod
+  // Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,7 +51,6 @@ const Login = () => {
       otp: "",
     },
   });
-
   // Register user hook
   const {
     data: registrationData,
@@ -64,27 +60,28 @@ const Login = () => {
 
   // Login user hook
   const {
+    data: loginUserData,
     mutateAsync: loginMutation,
     isSuccess: loginSuccess,
     isError: loginError,
   } = useLoginUser();
 
+  const { data: userInfo, isSuccess: getUserInfoSuccess } = useGetUser();
+
   // Update name hook
   const {
-    data: userInfo,
+    data: updatedUserInfo,
     mutateAsync: updateNameMutation,
     isSuccess: updateNameSuccessful,
     isError: updateNameError,
   } = useUpdateName();
 
-  // Handle form submission logic
+  // Handle form submission
   const handleLogin = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     setErrorMessage(null);
-
     try {
       if (!otpSent) {
-        // Send OTP step
         await registerMutation(values.phone);
         setOtpSent(true);
         toast({
@@ -93,10 +90,8 @@ const Login = () => {
             "A One-Time Password (OTP) has been successfully sent to your mobile number. Please enter it to proceed.",
         });
       } else {
-        // After OTP is sent, log the user in
         const userID = registrationData?.userId;
         await loginMutation({ userID, OTP: values?.otp });
-
         // If login succeeds, update the username
         if (loginSuccess) {
           toast({
@@ -104,6 +99,9 @@ const Login = () => {
             description:
               "Your OTP has been successfully verified. Welcome aboard!",
           });
+        }
+
+        if (userInfo?.phoneVerification) {
           const username = generateUsername();
           await updateNameMutation(username);
         }
@@ -114,15 +112,21 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Handle navigation after success
   useEffect(() => {
-    if (loginSuccess || updateNameSuccessful) {
-      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+    if (getUserInfoSuccess || updateNameSuccessful) {
+      localStorage.setItem(
+        "userInfo",
+        userInfo ? JSON.stringify(userInfo) : JSON.stringify(updatedUserInfo)
+      );
       navigate("/");
     }
-  }, [loginSuccess, updateNameSuccessful, userInfo, navigate]);
-
+  }, [
+    getUserInfoSuccess,
+    updateNameSuccessful,
+    userInfo,
+    updatedUserInfo,
+    navigate,
+  ]);
   return (
     <Card className="w-full md:w-2/3 mx-auto p-6 bg-[#e5e5e5] border-2 border-gray-800 md:shadow-[10px_10px_20px_rgba(0,0,0,2)]">
       <CardHeader>
@@ -150,8 +154,8 @@ const Login = () => {
                       <Input
                         placeholder="Enter phone number"
                         className="pl-10"
-                        disabled={otpSent || isSubmitting}
-                        {...field}
+                        // disabled={otpSent} // Disable input if OTP is sent
+                        {...field} // Spread field props correctly
                       />
                     </div>
                   </FormControl>
@@ -159,7 +163,6 @@ const Login = () => {
                 </FormItem>
               )}
             />
-
             {/* OTP Field - Visible only after OTP is sent */}
             {otpSent && (
               <FormField
@@ -171,9 +174,12 @@ const Login = () => {
                     <FormControl>
                       <InputOTP maxLength={6} {...field}>
                         <InputOTPGroup>
-                          {[...Array(6)].map((_, index) => (
-                            <InputOTPSlot index={index} key={index} />
-                          ))}
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
                         </InputOTPGroup>
                       </InputOTP>
                     </FormControl>
@@ -182,27 +188,8 @@ const Login = () => {
                 )}
               />
             )}
-
-            {/* Error Message */}
-            {errorMessage && (
-              <p
-                className="text-red-600 text-sm"
-                role="alert"
-                aria-live="assertive"
-              >
-                {errorMessage}
-              </p>
-            )}
-
-            {/* Loader */}
-            {isSubmitting && <Loader />}
-
             {/* Submit Button */}
-            <Button
-              className="w-full flex items-center gap-4"
-              type="submit"
-              disabled={isSubmitting}
-            >
+            <Button className="w-full flex items-center gap-4 " type="submit">
               <LogIn className="mr-2 h-5 w-5" />
               {otpSent ? "Continue" : "Send OTP"}
             </Button>
@@ -212,5 +199,4 @@ const Login = () => {
     </Card>
   );
 };
-
 export default Login;
