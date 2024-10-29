@@ -8,15 +8,27 @@ import {
 import quizwave_logo_dark from "@/assets/quizwave_logo_dark.png";
 import { Link, useNavigate } from "react-router-dom";
 import { useLogoutUser } from "@/lib/react-query/queriesAndMutation";
+import { useState } from "react";
+import JoinRoomModal from "./JoinRoomModal";
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
   const { mutate: logout, isSuccess: logoutSuccessful } = useLogoutUser();
   const handleLogout = async () => {
     logout();
     localStorage.removeItem("userInfo");
     navigate("/login");
   };
+
+  const handleJoinRoom = (roomId: string) => {
+    console.log(`Joining room with ID: ${roomId}`);
+    // Add your room joining logic here
+  };
+
   return (
     <div className="hidden md:flex px-6 py-10 flex-col justify-between min-w-[270px] bg-[#3c34ab]">
       <div className="flex flex-col  gap-11">
@@ -33,13 +45,13 @@ const Sidebar = () => {
             Dashboard
           </Link>
 
-          <Link
-            to={"/"}
+          <div
+            onClick={openModal}
             className="flex items-center gap-3 p-4 rounded-xl text-white text-sm font-medium lg:text-base lg:font-medium hover:bg-black hover:bg-opacity-35"
           >
             <BetweenHorizontalStart />
             Join Game
-          </Link>
+          </div>
 
           <Link
             to={"/"}
@@ -66,6 +78,13 @@ const Sidebar = () => {
           Logout
         </div>
       </div>
+
+      {/* Join Room Modal */}
+      <JoinRoomModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onJoinRoom={handleJoinRoom}
+      />
     </div>
   );
 };

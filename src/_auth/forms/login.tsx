@@ -113,6 +113,7 @@ const Login = () => {
     }
   };
   useEffect(() => {
+    console.log(loginSuccess);
     if (getUserInfoSuccess || updateNameSuccessful) {
       localStorage.setItem(
         "userInfo",
@@ -125,6 +126,7 @@ const Login = () => {
     updateNameSuccessful,
     userInfo,
     updatedUserInfo,
+    loginSuccess,
     navigate,
   ]);
   return (
